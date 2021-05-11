@@ -83,9 +83,8 @@ class Args:
 
 ## III algorithm
 
-DDPG + HER + expert data
-
-
+DDPG + HER + Expert Data + action clip 
+<img src="README.assets/algorithm.png" alt="总图v2" style="zoom: 33%;" />
 
 ## IV. Result
 
@@ -97,7 +96,7 @@ DDPG + HER + expert data
 
 <center>pick and place task</center>
 
-<img src="RL_手臂项目.assets/Push_1_big.png" alt="Push_1_big" style="zoom: 50%;" />
+<img src="README.assets/Push_1_big.png" alt="Push_1_big" style="zoom: 50%;" />
 
-<img src="RL_手臂项目.assets/PickandPlace_1_big.png" alt="PickandPlace_1_big" style="zoom:50%;" />
+<img src="README.assets/PickandPlace_1_big.png" alt="PickandPlace_1_big" style="zoom:50%;" />
 
