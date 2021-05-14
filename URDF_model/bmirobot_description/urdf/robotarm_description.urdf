@@ -382,7 +382,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-1.stl"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-1.dae"/>
       </geometry>
 
       <origin rpy="0 0 0" xyz="0 0 0"/>
@@ -403,14 +403,14 @@
     </contact>
     <visual>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-2.stl"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-2.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="white"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-2.stl"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-2.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
