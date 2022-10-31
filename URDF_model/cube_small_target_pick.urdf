@@ -13,9 +13,9 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-			<box size=".04 .04 .08"/>
+			<box size=".06 .06 .06"/>
       </geometry>
-       <material name="white">
+       <material name="red">
         <color rgba="125, 0, 0, .3"/>
       </material>
     </visual>

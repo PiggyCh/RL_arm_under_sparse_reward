@@ -13,7 +13,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-			<box size=".04 .04 .04"/>
+			<box size=".06 .06 .06"/>
       </geometry>
        <material name="white">
         <color rgba="1 1 1 1"/>
@@ -22,7 +22,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-	 	<box size=".04 .04 .04"/>
+	 	<box size=".06 .06 .06"/>
       </geometry>
     </collision>
   </link>

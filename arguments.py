@@ -1,106 +1,111 @@
-import argparse
-#argparse的库可以在命令行中传入参数并让程序运行
 """
-Here are the param for the training
-
+Here are the params for training
 """
-
-
-def get_args():
-    parser = argparse.ArgumentParser()
-    # the environment setting
-    #type是传入的参数数据类型  help是该参数的提示信息  default是默认参数
-
-    '''
-    使用时：
-    python demo.py -h
-    '''
-    parser.add_argument('--env-name', type=str,
-                        default='HandManipulateBlockRotateZ-v0', help='the environment name')  # 'FetchPush-v1'
-    parser.add_argument('--n-epochs', type=int, default=50,
-                        help='the number of epochs to train the agent')
-    parser.add_argument('--n-cycles', type=int, default=50,
-                        help='the times to collect samples per epoch')
-    parser.add_argument('--n-batches', type=int, default=40,
-                        help='the times to update the network')
-    parser.add_argument('--save-interval', type=int, default=5,
-                        help='the interval that save the trajectory')
-    parser.add_argument('--seed', type=int, default=123, help='random seed')
-    parser.add_argument('--num-workers', type=int, default=4,
-                        help='the number of cpus to collect samples')
-    parser.add_argument('--replay-strategy', type=str,
-                        default='future', help='the HER strategy')
-    parser.add_argument('--clip-return', type=float,
-                        default=50, help='if clip the returns')
-    parser.add_argument('--save-dir', type=str,
-                        default='saved_models/', help='the path to save the models')
-    parser.add_argument('--noise-eps', type=float,
-                        default=0.2, help='noise eps')
-    parser.add_argument('--random-eps', type=float,
-                        default=0.3, help='random eps')
-    parser.add_argument('--buffer-size', type=int,
-                        default=int(1e6), help='the size of the buffer')
-    parser.add_argument('--replay-k', type=int, default=4,
-                        help='ratio to be replace')
-    parser.add_argument('--clip-obs', type=float,
-                        default=200, help='the clip ratio')
-    parser.add_argument('--batch-size', type=int,
-                        default=256, help='the sample batch size')
-    parser.add_argument('--gamma', type=float, default=0.98,
-                        help='the discount factor')
-    parser.add_argument('--action-l2', type=float, default=1, help='l2 reg')
-    parser.add_argument('--lr-actor', type=float, default=0.001,
-                        help='the learning rate of the actor')
-    parser.add_argument('--lr-critic', type=float, default=0.001,
-                        help='the learning rate of the critic')
-    parser.add_argument('--polyak', type=float, default=0.95,
-                        help='the average coefficient')
-    parser.add_argument('--n-test-rollouts', type=int,
-                        default=10, help='the number of tests')
-    parser.add_argument('--clip-range', type=float,
-                        default=5, help='the clip range')
-    parser.add_argument('--demo-length', type=int,
-                        default=20, help='the demo length')
-    parser.add_argument('--cuda', action='store_true',
-                        help='if use gpu do the acceleration')
-    parser.add_argument('--num-rollouts-per-mpi', type=int,
-                        default=2, help='the rollouts per mpi')
-
-    args = parser.parse_args()
-
-    return args
-
+from easydict import EasyDict as edict
+import time
 
 class Args:
-    def __init__(self):
-        self.n_epochs = 200  # 50
-        self.n_cycles = 50
-        self.n_batches = 40
-        self.save_interval = 5
-        self.seed = 125  # 123
-        self.num_workers = 19  # 1
-        self.replay_strategy = 'future'
-        self.clip_return = 50
-        self.save_dir = 'saved_models/'
-        self.noise_eps = 0.01
-        self.random_eps = 0.3
-        self.buffer_size = 1e6*1/2
-        self.replay_k = 4  # replay with k random states which come from the same episode as the transition being replayed and were observed after it
-        self.clip_obs = 200
-        self.batch_size = 256
-        self.gamma = 0.98
-        self.action_l2 = 1
-        self.lr_actor = 0.001
-        self.lr_critic = 0.001
-        self.polyak = 0.95  # 软更新率
-        self.n_test_rollouts = 25 #在训练时测试次数
-        self.clip_range = 5
-        self.demo_length = 25  # 20
-        self.cuda = False
-        self.num_rollouts_per_mpi = 2
-        self.add_demo = True  # add demo data or not
-        self.demo_name="bmirobot_1000_push_demo.npz"
-        #self.demo_name="bmirobot_1000_pick_demo.npz"
-        self.train_type = "push" #or "pick"
-        self.Use_GUI =True  #GUI is for visualizing the training process
-        self.env_name = 'bmirobot_'+str(self.train_type)+" seed"+str( self.seed )
+    task_type = "push"  # or "pick"
+    Use_GUI = False  # GUI is for visualizing the training process
+    time_date = time.localtime()
+    date = f'{time_date.tm_mon}_{time_date.tm_mday}_{time_date.tm_hour}_{time_date.tm_min}'
+    seed = 125  # 123
+    action_dim = 4
+    n_agent = 2
+    clip_obs = 5
+    actor_num = 10
+    clip_range = 200
+    action_bound = 0.5
+    demo_length = 25  # 20
+    env_params = edict({    
+        'n_agents' :  n_agent,
+        'dim_observation' : 24, 
+        'dim_action' : 3,
+        'dim_hand' :  3,
+        'dim_achieved_goal' :  3,
+        'clip_obs' : clip_obs,
+        'dim_goal' :  3,
+        'max_timesteps' : 100,
+        'action_max' : 0.15
+        })
+
+    train_params = edict({
+        #params for multipross
+        'learner_step' : int(1e7),
+        'update_tar_interval' : 40,
+        'evalue_interval' : 4000,
+        'evalue_time' : 25,  # evaluation num per epoch
+        'store_interval': 10,
+        'actor_num' : actor_num,
+        'date' : date,
+        'polyak' : 0.95,  # 软更新率
+        'action_l2' : 1, #  actor_loss += self.args.action_l2 * (acts_real_tensor / self.env_params['action_max']).pow(2).mean()
+        'noise_eps' : 0.01,  # epsillon 精度
+        'random_eps' : 0.3,
+        'theta' : 0.1, # GAIL reward weight
+        'Is_train_discrim': True,
+        'roll_time' : 2,
+        'gamma' : 0.98,
+        'batch_size' :  256,
+        'buffer_size' : 1e6, 
+        'hand_states' : [-1, 0, 0.5],
+        'device' : 'cpu',
+        'lr_actor' : 0.001,
+        'lr_critic' : 0.001,
+        'lr_disc' : 0.001,
+        'clip_obs' : clip_obs,
+        'clip_range' : 200,
+        'add_demo' : False,
+        'save_dir' : 'saved_models/',
+        'seed' : seed,
+        'env_name' : 'armrobot_' + str(task_type) + '_' + "seed" +str(seed) + '_' + str(date),
+        'demo_name' : 'Expertdemo/armrobot_4000_push_demo.npz',
+        'replay_strategy' : 'future',# 后见经验采样策略
+        'replay_k' :  4  # 后见经验采样的参数
+    })
+
+    train_params.update(env_params)
+
+    robot_params = edict({
+        'useInverseKinematics': 1,  # 反动力学  IK
+        'useSimulation': 1,  # 仿真
+        'maxForce': 500,
+        'ArmRobot_endRt': 11,  # 控制机器人右臂末端的节点
+        'ArmRobot_endLt': 22, # 控制机器人左臂末端的节点
+        'joint_ll': [-.967, -2, -2.96, 0.19, -2.96, -2.09, -3.05],  # 定位滑块和转动(铰链)关节的下限。
+        'joint_ul': [.967, 2, 2.96, 2.29, 2.96, 2.09, 3.05],  # 滑动块和转动关节的位置上限
+        'IS_GUI' : Use_GUI,
+        'plane_path' : "plane.urdf",
+        'robot_URDF_path':'URDF_model/bmirobot_description/urdf/robotarm_description.urdf',
+        'robot_base_pos': [-0.10, 0.00, 0.07],
+        'robot_base_orientation': [0.0, 0.0, 0.0, 1.0],
+        'table_path' : 'table/table.urdf',
+        'table_base_pos' : [0, 0.3, -0.45],
+        'limit_x' : [-1, 1],
+        'limit_y' : [-1, 1],
+        'limit_z' : [-1, 1],
+        'r_arm_joint' : list(range(3, 10)), 
+        'l_arm_joint' : list(range(14, 21)),
+        'r_hand_joint' : [10, 11],
+        'l_hand_joint' : [21, 22],
+    })
+
+    task_params = edict({
+        'task_type' : task_type,
+        'joint_num' : 24,
+        'max_gen_time' : 100, # try to generate a different cube tareet pos
+        'reward_type' : 'sparse',
+        'pick_has_block' : True ,  # 环境中是否有物块
+        'distance_threshold' : 0.05, 
+        'n_substeps' : 20,
+        'n_actions' : action_dim,
+        '_timeStep' : 1. / 240.,
+        'n_agent' : n_agent,
+        '_action_bound' : 0.5,
+        'action_high' : [action_bound] * action_dim * n_agent,
+        'x_gen_range' : [-0.35, 0.35],
+        'y_gen_range' : [0.3, 0.45],
+        'z_gen_range' : [0.2, 0.5],
+        'cube_pick' : "URDF_model/cube_small_pick.urdf",
+        'cube_target' : "URDF_model/cube_small_target_pick.urdf",
+    })

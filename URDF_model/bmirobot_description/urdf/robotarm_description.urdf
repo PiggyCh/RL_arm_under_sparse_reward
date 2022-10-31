@@ -384,7 +384,6 @@
       <geometry>
         <mesh filename="package://bmirobot_description/modle/stl_V5/hand-1.dae"/>
       </geometry>
-
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
     <inertial>
@@ -733,14 +732,14 @@
   <link name="left_link8">
     <visual>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/link7.dae"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/left-link7.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="red"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/link7.dae"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/left-link7.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -751,16 +750,23 @@
     </inertial>
   </link>
   <link name="left_hand1">
+    <contact>
+      <lateral_friction value="10.0"/>
+      <rolling_friction value="0.0"/>
+      <inertia_scaling value="3.0"/>
+      <contact_cfm value="0.0"/>
+      <contact_erp value="1.0"/>
+    </contact>
     <visual>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-1.dae"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/left-hand-1.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="white"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-1.dae"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/left-hand-1.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -771,16 +777,23 @@
     </inertial>
   </link>
   <link name="left_hand2">
+    <contact>
+      <lateral_friction value="10.0"/>
+      <rolling_friction value="0.0"/>
+      <inertia_scaling value="3.0"/>
+      <contact_cfm value="0.0"/>
+      <contact_erp value="1.0"/>
+    </contact>
     <visual>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-2.dae"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/left-hand-2.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <material name="white"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://bmirobot_description/modle/stl_V5/hand-2.dae"/>
+        <mesh filename="package://bmirobot_description/modle/stl_V5/left-hand-2.dae"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>
@@ -840,7 +853,7 @@
   </joint>
   <joint name="left_joint7" type="revolute">
     <limit effort="1000.0" lower="-1.57079632679" upper="1.57079632679" velocity="9.42477796077"/>
-    <origin rpy="0.0 0 0" xyz="0.0 0 0"/>
+    <origin rpy="1.57079632679 0 0" xyz="0.0 0 0"/>
     <axis xyz="0 0 1"/>
     <parent link="left_link7"/>
     <child link="left_link8"/>
@@ -849,15 +862,15 @@
   <joint name="left_hand_joint1" type="revolute">
     <limit effort="1000.0" lower="-1.74532925199" upper="1.74532925199" velocity="9.42477796077"/>
     <origin rpy="0 0 0" xyz="0.0865 0.0265 0.0240"/>
-    <axis xyz="0 0 1"/>
+    <axis xyz="0 1 0"/>
     <parent link="left_link8"/>
     <child link="left_hand1"/>
     <dynamics damping="0.7"/>
   </joint>
   <joint name="left_hand_joint2" type="revolute">
-    <limit effort="1000.0" lower="-0.785398163397" upper="0.0" velocity="9.42477796077"/>
-    <origin rpy="0 0 0" xyz="0.0865 0 0.024"/>
-    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-1.74532925199" upper="1.74532925199" velocity="9.42477796077"/>
+    <origin rpy="0 0 0" xyz="0.0865 0.024 0"/>
+    <axis xyz="0 1 0"/>
     <parent link="left_link8"/>
     <child link="left_hand2"/>
     <dynamics damping="0.7"/>
