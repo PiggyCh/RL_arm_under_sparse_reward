@@ -13,7 +13,7 @@ class Args:
     action_dim = 4
     n_agent = 2
     clip_obs = 5
-    actor_num = 10
+    actor_num = 8
     clip_range = 200
     action_bound = 0.5
     demo_length = 25  # 20
@@ -30,7 +30,7 @@ class Args:
         })
 
     train_params = edict({
-        #params for multipross
+        # params for multipross
         'learner_step' : int(1e7),
         'update_tar_interval' : 40,
         'evalue_interval' : 4000,
@@ -38,6 +38,7 @@ class Args:
         'store_interval': 10,
         'actor_num' : actor_num,
         'date' : date,
+        'checkpoint' : None,
         'polyak' : 0.95,  # 软更新率
         'action_l2' : 1, #  actor_loss += self.args.action_l2 * (acts_real_tensor / self.env_params['action_max']).pow(2).mean()
         'noise_eps' : 0.01,  # epsillon 精度
@@ -55,11 +56,11 @@ class Args:
         'lr_disc' : 0.001,
         'clip_obs' : clip_obs,
         'clip_range' : 200,
-        'add_demo' : False,
+        'add_demo' : True,
         'save_dir' : 'saved_models/',
         'seed' : seed,
         'env_name' : 'armrobot_' + str(task_type) + '_' + "seed" +str(seed) + '_' + str(date),
-        'demo_name' : 'Expertdemo/armrobot_4000_push_demo.npz',
+        'demo_name' : 'armrobot_100_push_demo.npz',
         'replay_strategy' : 'future',# 后见经验采样策略
         'replay_k' :  4  # 后见经验采样的参数
     })

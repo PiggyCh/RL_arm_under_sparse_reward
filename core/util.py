@@ -1,53 +1,73 @@
-import torch as th
+import sys
+from pathlib import Path
+sys.path.append(Path(__file__).parent.parent.resolve().as_posix())
+
 import numpy as np
 import sys
+import torch
+from torch.distributions.categorical import Categorical
+
 from arguments import Args
-import time
-import random
-sys.path.append('Env')
-sys.path.append('Algorithm')
-from pathlib import Path
-import torch.multiprocessing as mp
-import sys
-sys.path.append(Path(__file__).parent.parent.resolve().as_posix())
 # process the inputs
 
-def process_inputs(o, g, o_mean, o_std, g_mean, g_std):
-    clip_obs = Args.clip_obs
-    clip_range = Args.clip_range
-    size = 48
-    o = o.reshape(-1, size)
+env_params = Args.env_params
+train_params = Args.train_params
+task_params = Args.task_params
+
+dim_observation = env_params.dim_observation
+n_agents = env_params.n_agents
+dim_action = env_params.dim_action
+dim_hand = env_params.dim_hand
+noise_eps = train_params.noise_eps
+action_max = env_params.action_max
+random_eps = train_params.random_eps
+hand_states =  train_params.hand_states
+clip_obs = Args.clip_obs
+clip_range = Args.clip_range
+
+def process_inputs(o, g, norm):
+    o = o.reshape(-1, o.shape[-1] * o.shape[-2])
     o_clip = np.clip(o, -clip_obs, clip_obs)
     g_clip = np.clip(g, -clip_obs, clip_obs)
-    o_norm_ = np.clip((o_clip - o_mean) / (o_std), -clip_range, clip_range)
-    g_norm = np.clip((g_clip - g_mean) / (g_std), -clip_range, clip_range)
-    o_norm = o_norm_.reshape(-1, 24)
+    o_norm_ = np.clip((o_clip - norm['o_mean']) / (norm['o_std']), -clip_range, clip_range)
+    g_norm = np.clip((g_clip - norm['g_mean']) / (norm['g_std']), -clip_range, clip_range)
+    o_norm = o_norm_.reshape(-1, dim_observation)
     return o_norm, g_norm
 
-
-def select_action(actors_network, obs_norm, g_norm, env_params):
-    n_agents = env_params['n_agents']
-    dim_action = env_params['dim_action']
-    actions = np.ones([n_agents, dim_action + 1])  # 2*4
-    hand_states = [-1, 0, 0.5]
+@torch.no_grad()
+def select_action(actors, obs, g, normalizer, explore):
+    acts = np.ones([n_agents, dim_action])
+    hands = np.ones([n_agents, dim_hand])
+    actions = np.ones([n_agents, dim_action + 1])
+    obs_norm, g_norm = process_inputs(obs, g, normalizer)
     for i in range(n_agents):
         sb_norm = obs_norm[i, :]
         inputs = np.concatenate([sb_norm, g_norm])
-        inputs_tensor = th.tensor(inputs, dtype=th.float32)
-        act, hand_logits = actors_network[i](inputs_tensor)  # actor网络得到初步的act
-        act = act.detach().numpy().squeeze()  # 转化为数组形式 .aqueeze()去除一维
-        act = np.clip(act, -env_params['action_max'], env_params['action_max'])
-        hand_id = np.argmax(hand_logits.detach().cpu().numpy(), axis=-1)
-        hand_act = [hand_states[hand_id]]  # 获取抽到末端状态位置对应的值
-        hand_act_numpy = np.array(hand_act)  # 转为numpy，方便与act结合
-        actions_ = np.concatenate((act, hand_act_numpy), axis=-1)
+        act, hand_logits = actors[i](num_to_tensor(inputs)) 
+        act = act.cpu().numpy().squeeze()
+        # add the gaussian
+        if explore:
+            act += noise_eps * action_max * np.random.randn(*act.shape)
+            act = np.clip(act, -action_max, action_max)
+            # random actions...
+            random_actions = np.random.uniform(low=-action_max, high=action_max,
+                                            size=dim_action)
+            # choose if use the random actions
+            act += np.random.binomial(1, random_eps, 1)[0] * (random_actions - act)
+            hand_id = Categorical(hand_logits).sample().detach().cpu().numpy() 
+        else:
+            hand_id = np.argmax(hand_logits.detach().cpu().numpy(), axis=-1)
+        acts[i, :] = act
+        hands[i, :] = hand_logits
+        # cat actions
+        hand_act = [hand_states[hand_id]] 
+        actions_ = np.concatenate((act, np.array(hand_act)), axis = -1)
         actions[i, :] = actions_
-    actions = actions.reshape(-1)
-    return actions
+    return actions.reshape(-1), acts.reshape(-1), hands.reshape(-1)
 
 def num_to_tensor(inputs, device = 'cpu'):
     # inputs_tensor = th.tensor(inputs, dtype=th.float32).unsqueeze(0)  # 会在第0维增加一个维度
-    inputs_tensor = th.tensor(inputs, dtype=th.float32).to(device)
+    inputs_tensor = torch.tensor(inputs, dtype=torch.float32).to(device)
     return inputs_tensor
 
 def compute_reward(achieved_goal, goal, sample=False):

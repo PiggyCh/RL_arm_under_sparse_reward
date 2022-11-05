@@ -18,12 +18,12 @@ class ArmRobotGymEnv(gym.Env):
         self._urdfRoot = pybullet_data.getDataPath()
         self.env_pid = env_pid
         self.blockUid = -1
-        # initialize env and random seed 
+        self.reset(seed = env_pid) # set different seed is critical for actor
         self.Arm_Robot = Arm_Robot(Args.robot_params)
         self.action_space = spaces.Box(-np.array(self.action_high), np.array(self.action_high))
-        self.reset()
+        self.reset_task()
 
-    def reset(self):
+    def reset_task(self):
         # 选择约束求解器迭代的最大次数。如果达到了solverResidualThreshold，求解器可能会在numsolver迭代之前终止
         p.setPhysicsEngineParameter(numSolverIterations=150)
         p.setTimeStep(self._timeStep)  # 对于每一个动作，我们执行n个子步骤，即我们需要规定动作频率

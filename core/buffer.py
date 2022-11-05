@@ -32,11 +32,13 @@ class replay_buffer:
         self.o_norm = normalizer(
             n_agent = env_params.n_agents, 
             size = env_params.n_agents * env_params.dim_observation, 
+            device = self.device,
             default_clip_range = env_params.clip_obs, 
             )
         self.g_norm = normalizer(
             n_agent = env_params.n_agents, 
             size = env_params.dim_goal, 
+            device = self.device,
             default_clip_range = env_params.clip_obs, 
             )
         self.buffer_tmp = {key: [] for key in self.specs}
@@ -44,22 +46,25 @@ class replay_buffer:
         for _ in range(self.size):
             try:
                 for key in self.specs:
-                    self.buffer_tmp[key].append(torch.zeros(**self.specs[key]))
+                    self.buffer_tmp[key].append(torch.zeros(**self.specs[key]).to(self.device))
             except:
                 logger.error(f'memory exceed! Turn down buffer size, now buffer size {self.size}, while creating maxsize {_}')
                 break
         self.buffers = dict({key : self.buffer_tmp[key] for key in self.buffer_tmp})
         self.current_size = 0
+        self.demo_length = 0 
         logger.info(f'creating buffer success: {self.specs.keys()}')
 
-    def push(self, episode_batch):
+    def push(self, episode_batch, initial_demo = False):
+        if initial_demo:
+            self.demo_length = episode_batch['obs'].shape[0]
         keys = ['obs', 'ag', 'g', 'acts', 'hands', 'next_obs', 'next_ag', 'reward']
         buffer_temp =  {key : item for key, item in zip(keys, episode_batch)}
         batch_size = buffer_temp['obs'].shape[0]
         idxs = self._get_storage_idx(inc=batch_size)
         for key in keys:
             for i, idx in enumerate(idxs):
-                self.buffers[key][idx] = torch.tensor(buffer_temp[key][i], dtype= self.specs[key]['dtype'])
+                self.buffers[key][idx] = torch.tensor(buffer_temp[key][i], dtype= self.specs[key]['dtype']).to(self.device)
         self._update_normalizer(episode_batch = buffer_temp)
 
     def sample(self, batch_size):
@@ -73,7 +78,7 @@ class replay_buffer:
         data_tmp['reward'] = torch.tensor(data_tmp['reward'], dtype= self.specs['reward']['dtype'])
         transitions = {}
         for key, val in data_tmp.items():
-            transitions[key] = val.clone()
+            transitions[key] = val.clone().to(self.device)
         return transitions
     
     def get_norm(self):
@@ -98,10 +103,10 @@ class replay_buffer:
         elif self.current_size < self.size:
             overflow = inc - (self.size - self.current_size)
             idx_a = np.arange(self.current_size, self.size)
-            idx_b = np.random.randint(0, self.current_size, overflow)
+            idx_b = np.random.randint(self.demo_length, self.current_size, overflow)
             idx = np.concatenate([idx_a, idx_b])
         else:
-            idx = np.random.randint(0, self.size, inc)
+            idx = np.random.randint(self.demo_length, self.size, inc)
         self.current_size = min(self.size, self.current_size + inc)
         return idx
 

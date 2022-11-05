@@ -1,46 +1,16 @@
 #! /usr/bin/env python
-import numpy as np
 from arguments import Args
-
 import math
 from Env.ArmRobot_gym import ArmRobotGymEnv as pickenv
-"""
 
-"""
-
-demo_num = 4000
-def get_env_params():
-    params ={}
-    params['n_agents'] = 2
-    params['dim_observation'] = 24  # 每个agent的obs维度
-    params['dim_action'] = 3
-    params['dim_hand'] = 3
-    params['dim_achieved_goal'] = 3
-    params['dim_goal'] = 3
-    params['max_timesteps'] = 100
-    params['action_max'] = 0.5
-    return params
-
-def launch(args):
-    # create the ddpg_agent 创建环境，从参数文件里找
-
-    env = pickenv(args.task_params)
-    env_params = get_env_params()
-    # create the ddpg agent to interact with the environment
-    get_pick_demo(env, env_params)
-
-
-def get_pick_demo(env, env_params):
-    savetime = 0
-    obs_total, ag_total, g_total, actions_total, acts_total, hands_total, info_total, next_obs_total, next_ag_total, r_total = [], [], [], [], [], [], [], [], [], []
+def get_pick_demo(data_queue, env_index):
+    env = pickenv(Args.task_params, env_pid = env_index)
+    max_timesteps = Args.env_params.max_timesteps
     for epoch in range(100000):
-        if savetime >= demo_num:
-            break
-        mb_obs, mb_ag, mb_g, mb_actions, mb_acts, mb_hands, mb_info, mb_next_obs, mb_next_ag, mb_r = [], [], [], [], [], [], [], [], [], []
         # reset the rollouts
         ep_obs, ep_ag, ep_g, ep_actions, ep_acts, ep_hands, ep_info, ep_next_obs, ep_next_ag, ep_r = [], [], [], [], [], [], [], [], [], []
         # reset the environment
-        obs_all = env.reset()
+        obs_all = env.reset_task()
         obs = obs_all['observation']
         ag = obs_all['achieved_goal']
         g = obs_all['desired_goal']
@@ -49,7 +19,7 @@ def get_pick_demo(env, env_params):
 
         if block_pos[0] > 0.025 and g[0] > 0.025:
             # 物块和目标都在右侧位置，只有右臂pick
-            for t in range(int(env_params['max_timesteps'])):
+            for t in range(max_timesteps):
                 step_time += 1
                 end_posRt = obs[0, 0:3]
                 block_pos = ag
@@ -107,7 +77,7 @@ def get_pick_demo(env, env_params):
 
         elif block_pos[0] < 0.025 and g[0] < 0.025:
             # 物块和目标都在左侧位置，只有左臂pick
-            for t in range(int(env_params['max_timesteps'])):
+            for t in range(max_timesteps):
                 step_time += 1
                 end_posLt = obs[1, 0:3]
                 block_pos = ag
@@ -165,7 +135,7 @@ def get_pick_demo(env, env_params):
 
         elif block_pos[0] < 0.025 and g[0] > 0.025:
             # 物块在左侧,目标在右侧，左臂先抓到中间，右臂再抓
-            for t in range(int(env_params['max_timesteps'])):
+            for t in range(max_timesteps):
                 step_time += 1
                 end_posRt = obs[0, 0:3]
                 end_posLt = obs[1, 0:3]
@@ -251,7 +221,7 @@ def get_pick_demo(env, env_params):
 
         elif block_pos[0] > 0.025 and g[0] < 0.025:
             # 物块在右侧,目标在左侧，右臂先抓到中间，左臂再抓
-            for t in range(int(env_params['max_timesteps'])):
+            for t in range(max_timesteps):
                 step_time += 1
                 end_posRt = obs[0, 0:3]
                 end_posLt = obs[1, 0:3]
@@ -337,50 +307,16 @@ def get_pick_demo(env, env_params):
                 ag = ag_new
 
         if info['is_success'] == 1.0:
-            savetime += 1
-            print("This is " +str(savetime) +" savetime " )
-
-            mb_obs.append(ep_obs)
-            mb_ag.append(ep_ag)
-            mb_g.append(ep_g)
-            mb_actions.append(ep_actions)
-            mb_acts.append(ep_acts)
-            mb_hands.append(ep_hands)
-            mb_next_obs.append(ep_next_obs)
-            mb_next_ag.append(ep_next_ag)
-            mb_r.append(ep_r)
-            mb_info.append(ep_info)
-
-            # convert them into arrays
-            obs_total.append(mb_obs)
-            actions_total.append(mb_actions)
-            acts_total.append(mb_acts)
-            hands_total.append(mb_hands)
-            g_total.append(mb_g)
-            ag_total.append(mb_ag)
-            next_obs_total.append(mb_next_obs)
-            next_ag_total.append(mb_next_ag)
-            r_total.append(mb_r)
-            info_total.append(mb_info)
-
-    file = "armrobot_"+str(savetime)+"_push_demo.npz"
-    actions = np.array(actions_total).squeeze()
-    acts = np.array(acts_total).squeeze()
-    hands = np.array(hands_total).squeeze()
-    obs = np.array(obs_total).squeeze()
-    info = np.array(info_total).squeeze()
-    g = np.array(g_total).squeeze()
-    ag = np.array(ag_total).squeeze()
-    next_obs = np.array(next_obs_total).squeeze()
-    next_ag = np.array(next_ag_total).squeeze()
-    reward = np.array(r_total).squeeze()
-    reward = np.expand_dims(reward, axis=2)
-    np.savez_compressed(file, actions=actions, acts=acts, hands=hands, obs=obs, info=info, g=g,
-                        ag=ag, next_obs=next_obs,
-                        next_ag=next_ag, reward=reward)
-
-
-if __name__ == '__main__':
-    # get the params
-    args = Args()
-    launch(args)
+            data_queue.put(
+                {
+                    'obs' : ep_obs,
+                    'ag' : ep_ag,
+                    'g' : ep_g,
+                    'acts' : ep_acts,
+                    'hands' : ep_hands,
+                    'next_obs': ep_next_obs,
+                    'next_ag' : ep_next_ag,
+                    'r' : ep_r,
+                    'info': ep_info
+                }
+            )

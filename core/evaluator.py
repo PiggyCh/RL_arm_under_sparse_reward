@@ -1,15 +1,16 @@
 #! /usr/bin/env python
-from random import random
 import sys
 from pathlib import Path
 sys.path.append(Path(__file__).parent.parent.resolve().as_posix())
-from Env.ArmRobot_gym import ArmRobotGymEnv as robot_env
+
 import time
 import os
-from core.util import process_inputs, select_action
 import csv
-import numpy as np
 from matplotlib import pyplot as plt
+
+from core.util import select_action
+from core.model import actor
+from Env.ArmRobot_gym import ArmRobotGymEnv as robot_env
 
 def initialize_csv(path):
     file_name = os.path.join(path, 'training_data.csv')
@@ -19,31 +20,35 @@ def initialize_csv(path):
         writer.writerow(keys)
     return file_name
     
-def evaluate_worker(train_params, env_params, task_params, evalue_time, evalue_queue, logger):
-    plot_path = os.path.join(train_params.save_dir, train_params.env_name)
+def evaluate_worker(
+        train_params,
+        env_params,
+        task_params,
+        plot_path,
+        evalue_time,
+        evalue_queue,
+        logger
+    ):
     csv_file_name = initialize_csv(plot_path)
     env = robot_env(task_params)
+    actors = [actor(env_params) for i in range(env_params.n_agents)]
     while True:
         if not evalue_queue.empty():
             data = evalue_queue.get()
             evaluate_step = data['step']
-            o_mean, o_std, g_mean, g_std = data['o_norm_mean'], data['o_norm_std'], data['g_norm_mean'], data['g_norm_std']
-            actors_network = data['actors']
-            actors_network[0].eval()
-            actors_network[1].eval()
+            for i in range(env_params.n_agents):
+                actors[i].load_state_dict(data['actor_dict'][i])
+                actors[i].eval()
             is_successes = 0
             for i in range(evalue_time):
-                observation = env.reset()
+                observation = env.reset_task()
                 # start to do the demo
-                obs = observation['observation']
-                g = observation['desired_goal']
+                obs, g = observation['observation'], observation['desired_goal']
                 for t in range(env_params['max_timesteps']):
-                    obs_norm, g_norm = process_inputs(obs, g, o_mean, o_std, g_mean, g_std)
-                    action = select_action(actors_network, obs_norm, g_norm, env_params)
+                    action, _, _ = select_action(actors, obs, g, data['normalizer'], explore = False)
                     # put actions into the environment
                     observation_new, reward, _, info = env.step(action)
-                    obs = observation_new['observation']
-                    g = observation_new['desired_goal']
+                    obs, g = observation_new['observation'], observation_new['desired_goal']
                     if info['is_success'] == 1:
                         is_successes += 1
                         break
@@ -84,14 +89,15 @@ def plot(test_env_name, plot_path, csv_file_name, data):
             continue
         ax = axes[i-1]
         ax.ticklabel_format(style='sci', scilimits=(-1,2), axis='x')
-        ax.ticklabel_format(style='sci', scilimits=(-1,2), axis='y')
         ax.set_title(key)
         ax.plot(total_data["step"], total_data[key])
     plt.savefig(plot_path)
     plt.close()
 
 
-# from arguments import Args
+#  from random import random
+#  import numpy as np
+#  from arguments import Args
 # time = 0
 # def generate_data(): 
 #     global time

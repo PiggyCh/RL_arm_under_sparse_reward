@@ -4,10 +4,11 @@ import torch
 import torch.multiprocessing as mp
 
 class normalizer:
-    def __init__(self, n_agent, size, eps=1e-2, default_clip_range=np.inf):
+    def __init__(self, n_agent, size, device, eps=1e-2, default_clip_range=np.inf):
         self.n_agent = n_agent
         self.size = size
         self.eps = eps
+        self.device = device
         self.default_clip_range = default_clip_range
         self.Manager = mp.Manager()
         self.local_sum = np.zeros(self.size, np.float32)
@@ -20,8 +21,8 @@ class normalizer:
                 'mean' : np.zeros(self.size, np.float32),
                 'std': np.ones(self.size, np.float32)
                 })
-        self.torch_mean = torch.zeros(self.size, dtype = torch.float32)
-        self.torch_std = torch.ones(self.size, dtype = torch.float32)
+        self.torch_mean = torch.zeros(self.size, dtype = torch.float32).to(self.device)
+        self.torch_std = torch.ones(self.size, dtype = torch.float32).to(self.device)
         self.np_mean = np.zeros(self.size, dtype = np.float32)
         self.np_std = np.ones(self.size, dtype = np.float32)
 
@@ -50,8 +51,8 @@ class normalizer:
         self.np_mean = self.total_sum / self.total_count
         self.np_std = np.sqrt(np.maximum(np.square(self.eps), (self.total_sumsq / self.total_count) - np.square(
             self.total_sum / self.total_count)))
-        self.torch_mean = torch.tensor(self.np_mean)
-        self.torch_std = torch.tensor(self.np_std)
+        self.torch_mean = torch.tensor(self.np_mean).to(self.device)
+        self.torch_std = torch.tensor(self.np_std).to(self.device)
         # return data to manager
         self.total['mean'] = deepcopy(self.np_mean)
         self.total['std'] = deepcopy(self.np_std)

@@ -1,16 +1,14 @@
 #! /usr/bin/env python
 import os
 import torch as th
-from Algorithm.model import actor
+from core.model import actor
 from Env.ArmRobot_gym import ArmRobotGymEnv as bmenv
-from Algorithm.util import select_action, process_inputs
+from core.util import select_action, process_inputs
 from arguments import Args
 import sys
-sys.path.append('Env')
-sys.path.append('Algorithm')
 
 #加载训练好的模型 数据
-model_path = "saved_models_gail/armrobot_push_ seed123_919/123_True29_model.pt"
+model_path = "saved_models/armrobot_push_seed125_10_31_23_35/123_True29_model.pt"
 
 def rollout_test(args):
     o_mean, o_std, g_mean, g_std, act1, act2, cr1, cr2, disc = th.load(model_path, map_location=lambda storage, loc: storage)

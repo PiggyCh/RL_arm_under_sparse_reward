@@ -31,7 +31,7 @@ class her_sampler:
         for her_idx, idx, t_idx in zip(her_indexes[0], episode_idxs[her_indexes], future_t):
             transitions['g'][her_idx] = buffer['ag'][episode_idxs[her_idx]][t_idx]
         # re-compute reward
-        transitions['reward'] = np.expand_dims(self.reward_func(transitions['next_ag'], transitions['g'], sample = True), 1)
+        transitions['reward'] = np.expand_dims(self.reward_func(transitions['next_ag'].detach().cpu(), transitions['g'].detach().cpu(), sample = True), 1)
         transitions = {k: transitions[k].reshape(batch_size, *transitions[k].shape[1:]) for k in transitions.keys()}
         return transitions
     
